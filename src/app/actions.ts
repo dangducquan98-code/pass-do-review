@@ -1,0 +1,101 @@
+'use server'
+
+import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
+
+export async function loginWithPin(formData: FormData) {
+  const pin = formData.get('pin') as string
+  const adminPin = process.env.ADMIN_PIN || '123456'
+
+  if (pin === adminPin) {
+    const cookieStore = await cookies()
+    cookieStore.set('admin_auth', 'authenticated', { 
+      httpOnly: true, 
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 24 * 7 // 1 week
+    })
+    redirect('/admin/dashboard')
+  } else {
+    return { error: 'Mã PIN không chính xác' }
+  }
+}
+
+export async function logout() {
+  const cookieStore = await cookies()
+  cookieStore.delete('admin_auth')
+  redirect('/admin')
+}
+
+export async function addItem(formData: FormData) {
+  // In a real app, verify cookie here again just in case
+  const name = formData.get('name') as string
+  const original_price = parseFloat(formData.get('original_price') as string)
+  const sell_price = parseFloat(formData.get('sell_price') as string)
+  const status = formData.get('status') as string
+  const affiliate_link = formData.get('affiliate_link') as string
+  const imagesStr = formData.get('images') as string
+  const images = imagesStr ? JSON.parse(imagesStr) : []
+
+  const { error } = await supabase
+    .from('items')
+    .insert([
+      { name, original_price, sell_price, status, affiliate_link, images }
+    ])
+
+  if (error) {
+    console.error('Error adding item:', error)
+    return { error: error.message }
+  }
+
+  redirect('/admin/dashboard')
+}
+
+export async function updateItemStatus(id: string, status: string) {
+  const { error } = await supabase
+    .from('items')
+    .update({ status })
+    .eq('id', id)
+
+  if (error) {
+    return { error: error.message }
+  }
+  
+  return { success: true }
+}
+
+export async function deleteItem(id: string) {
+  const { error } = await supabase
+    .from('items')
+    .delete()
+    .eq('id', id)
+
+  if (error) {
+    return { error: error.message }
+  }
+  
+  return { success: true }
+}
+
+export async function editItem(id: string, formData: FormData) {
+  const name = formData.get('name') as string
+  const original_price = parseFloat(formData.get('original_price') as string)
+  const sell_price = parseFloat(formData.get('sell_price') as string)
+  const status = formData.get('status') as string
+  const affiliate_link = formData.get('affiliate_link') as string
+  
+  const imagesStr = formData.get('images') as string
+  const images = imagesStr ? JSON.parse(imagesStr) : []
+
+  const { error } = await supabase
+    .from('items')
+    .update({ name, original_price, sell_price, status, affiliate_link, images })
+    .eq('id', id)
+
+  if (error) {
+    console.error('Error updating item:', error)
+    return { error: error.message }
+  }
+
+  redirect('/admin/dashboard')
+}
