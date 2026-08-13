@@ -102,6 +102,9 @@ export default function AdminItemForm({ initialData }: { initialData?: ItemData 
       }
       
     } catch (error: any) {
+      if (error?.message === 'NEXT_REDIRECT') {
+        throw error
+      }
       console.error(error)
       alert(`Lỗi: ${error.message || 'Không xác định'}`)
       setLoading(false)
