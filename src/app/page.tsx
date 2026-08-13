@@ -22,9 +22,12 @@ export default async function Home() {
           <span>Đồ Review Thanh Lý</span>
         </div>
         
-        <h1 className="text-3xl md:text-4xl font-extrabold text-neutral-900 tracking-tight">
+        <h1 className="text-xl md:text-2xl font-extrabold text-neutral-900 tracking-tight">
           Săn Đồ Giá Rẻ, Chất Lượng Như Mới
         </h1>
+        <p className="mt-3 text-sm md:text-base text-neutral-500 max-w-lg mx-auto font-medium">
+          100% hàng mới, chỉ unbox quay video rồi gói lại
+        </p>
       </section>
 
       {/* Products Grid */}
