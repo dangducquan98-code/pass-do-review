@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import { ChevronLeft, ChevronRight, X, Image as ImageIcon } from 'lucide-react'
 
@@ -79,8 +80,8 @@ export default function ImageGallery({ images, alt }: ImageGalleryProps) {
       </div>
 
       {/* Fullscreen Lightbox Modal */}
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-xl">
+      {isOpen && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-xl">
           {/* Close Button */}
           <button 
             onClick={closeLightbox}
@@ -107,7 +108,7 @@ export default function ImageGallery({ images, alt }: ImageGalleryProps) {
             <>
               <button 
                 onClick={prevImage}
-                className="absolute left-2 md:left-8 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors backdrop-blur-md"
+                className="absolute left-2 md:left-8 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors backdrop-blur-md z-50"
                 title="Ảnh trước"
               >
                 <ChevronLeft className="w-6 h-6 md:w-8 md:h-8" />
@@ -115,14 +116,14 @@ export default function ImageGallery({ images, alt }: ImageGalleryProps) {
               
               <button 
                 onClick={nextImage}
-                className="absolute right-2 md:right-8 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors backdrop-blur-md"
+                className="absolute right-2 md:right-8 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors backdrop-blur-md z-50"
                 title="Ảnh tiếp"
               >
                 <ChevronRight className="w-6 h-6 md:w-8 md:h-8" />
               </button>
 
               {/* Indicators */}
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 bg-neutral-900/50 backdrop-blur-md rounded-full border border-white/10">
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 bg-neutral-900/50 backdrop-blur-md rounded-full border border-white/10 z-50">
                 {images.map((_, idx) => (
                   <div 
                     key={idx} 
@@ -134,7 +135,8 @@ export default function ImageGallery({ images, alt }: ImageGalleryProps) {
               </div>
             </>
           )}
-        </div>
+        </div>,
+        document.body
       )}
     </>
   )

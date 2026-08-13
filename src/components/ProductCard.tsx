@@ -16,7 +16,7 @@ export default function ProductCard({ item }: { item: Item }) {
   const isAvailable = item.status === 'available'
   
   return (
-    <div className="group relative bg-white border border-neutral-200 rounded-2xl overflow-hidden hover:border-blue-300 transition-all duration-500 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] flex flex-row md:flex-col h-full shadow-sm">
+    <div className="group relative bg-white border border-neutral-200 rounded-2xl overflow-hidden hover:border-blue-400 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 flex flex-row md:flex-col h-full shadow-sm">
       {/* Image Container */}
       <div className="relative w-[110px] md:w-full md:aspect-square overflow-hidden bg-neutral-100 flex-shrink-0 border-r md:border-r-0 md:border-b border-neutral-200 self-stretch">
         <ImageGallery images={item.images} alt={item.name} />
