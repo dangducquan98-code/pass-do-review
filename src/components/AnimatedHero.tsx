@@ -67,6 +67,8 @@ export default function AnimatedHero() {
           <span className="mx-3 text-neutral-300">•</span>
           <span className="mx-3 flex items-center gap-1.5 whitespace-nowrap"><Sparkles className="w-3.5 h-3.5 text-blue-500" /> Người quen cho dùng thử trước khi thanh toán</span>
           <span className="mx-3 text-neutral-300">•</span>
+          <span className="mx-3 flex items-center gap-1.5 whitespace-nowrap"><Sparkles className="w-3.5 h-3.5 text-blue-500" /> Hoàn tiền nếu hàng lỗi</span>
+          <span className="mx-3 text-neutral-300">•</span>
         </Marquee>
       </motion.div>
     </section>
