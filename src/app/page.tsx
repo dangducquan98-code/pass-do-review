@@ -21,6 +21,7 @@ export default async function Home({ searchParams }: Props) {
     .from('items')
     .select('*')
     .eq('status', 'available')
+    .order('display_order', { ascending: true })
     .order('created_at', { ascending: false })
 
   if (q) {

@@ -99,3 +99,25 @@ export async function editItem(id: string, formData: FormData) {
 
   redirect('/admin/dashboard')
 }
+
+export async function updateItemsOrder(items: { id: string; display_order: number }[]) {
+  // We can't bulk update easily with supabase-js unless we use upsert, 
+  // but upsert requires all non-nullable fields if we don't have a specific setup.
+  // So we'll just run individual updates concurrently.
+  const promises = items.map(item => 
+    supabase
+      .from('items')
+      .update({ display_order: item.display_order })
+      .eq('id', item.id)
+  )
+  
+  const results = await Promise.all(promises)
+  
+  const error = results.find(res => res.error)?.error
+  if (error) {
+    console.error('Error updating items order:', error)
+    return { error: error.message }
+  }
+  
+  return { success: true }
+}
