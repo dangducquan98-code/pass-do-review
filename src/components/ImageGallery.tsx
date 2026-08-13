@@ -9,9 +9,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 type ImageGalleryProps = {
   images: string[]
   alt: string
+  children?: React.ReactNode
 }
 
-export default function ImageGallery({ images, alt }: ImageGalleryProps) {
+export default function ImageGallery({ images, alt, children }: ImageGalleryProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [direction, setDirection] = useState(0) // 1 for next, -1 for prev
@@ -35,7 +36,8 @@ export default function ImageGallery({ images, alt }: ImageGalleryProps) {
     document.body.style.overflow = 'hidden' // Prevent background scrolling
   }
 
-  const closeLightbox = () => {
+  const closeLightbox = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation()
     setIsOpen(false)
     document.body.style.overflow = 'auto'
   }
@@ -116,35 +118,41 @@ export default function ImageGallery({ images, alt }: ImageGalleryProps) {
 
   return (
     <>
-      {/* Thumbnail View (Inside Product Card) */}
-      <div 
-        className="relative w-full h-full cursor-pointer group/gallery"
-        onClick={openLightbox}
-      >
-        <Image 
-          src={firstImage!} 
-          alt={alt} 
-          fill 
-          className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out" 
-          sizes="(max-width: 768px) 40vw, (max-width: 1200px) 50vw, 33vw"
-        />
-        
-        {/* Overlay on hover to indicate clickability */}
-        <div className="absolute inset-0 bg-black/0 group-hover/gallery:bg-black/10 transition-colors duration-300 flex items-center justify-center">
-          <div className="opacity-0 group-hover/gallery:opacity-100 transform scale-90 group-hover/gallery:scale-100 transition-all duration-300 bg-white/90 backdrop-blur-sm text-neutral-900 px-3 py-1.5 rounded-full text-xs font-bold shadow-lg flex items-center gap-1.5">
-            <ImageIcon className="w-3.5 h-3.5" />
-            Xem ảnh
-          </div>
+      {children ? (
+        <div onClick={openLightbox} className="cursor-pointer h-full w-full">
+          {children}
         </div>
-
-        {/* Extra Images Badge */}
-        {extraCount > 0 && (
-          <div className="absolute bottom-2 right-2 md:bottom-3 md:right-3 bg-neutral-900/80 backdrop-blur-md text-white text-[10px] md:text-xs font-bold px-2 py-1 rounded-md shadow-sm border border-white/10 flex items-center gap-1 z-10">
-            <ImageIcon className="w-3 h-3" />
-            +{extraCount}
+      ) : (
+        /* Thumbnail View (Inside Product Card) */
+        <div 
+          className="relative w-full h-full cursor-pointer group/gallery"
+          onClick={openLightbox}
+        >
+          <Image 
+            src={firstImage!} 
+            alt={alt} 
+            fill 
+            className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out" 
+            sizes="(max-width: 768px) 40vw, (max-width: 1200px) 50vw, 33vw"
+          />
+          
+          {/* Overlay on hover to indicate clickability */}
+          <div className="absolute inset-0 bg-black/0 group-hover/gallery:bg-black/10 transition-colors duration-300 flex items-center justify-center">
+            <div className="opacity-0 group-hover/gallery:opacity-100 transform scale-90 group-hover/gallery:scale-100 transition-all duration-300 bg-white/90 backdrop-blur-sm text-neutral-900 px-3 py-1.5 rounded-full text-xs font-bold shadow-lg flex items-center gap-1.5">
+              <ImageIcon className="w-3.5 h-3.5" />
+              Xem ảnh
+            </div>
           </div>
-        )}
-      </div>
+
+          {/* Extra Images Badge */}
+          {extraCount > 0 && (
+            <div className="absolute bottom-2 right-2 md:bottom-3 md:right-3 bg-neutral-900/80 backdrop-blur-md text-white text-[10px] md:text-xs font-bold px-2 py-1 rounded-md shadow-sm border border-white/10 flex items-center gap-1 z-10">
+              <ImageIcon className="w-3 h-3" />
+              +{extraCount}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Fullscreen Lightbox Modal */}
       {isOpen && typeof document !== 'undefined' && createPortal(

@@ -26,7 +26,7 @@ export default function ZaloButton() {
           </div>
           <div className="flex flex-col">
             <span className="text-white font-bold text-sm">Nhắn Zalo chốt đơn</span>
-            <span className="text-neutral-400 text-xs font-medium">Hỗ trợ 24/7 (0976014798)</span>
+            <span className="text-neutral-400 text-xs font-medium">Hỗ trợ 9h00 - 23h00 (0976014798)</span>
           </div>
         </div>
         
