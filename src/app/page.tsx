@@ -10,7 +10,7 @@ export default async function Home() {
   const { data: items, error } = await supabase
     .from('items')
     .select('*')
-    .order('status', { ascending: true }) // 'available' comes before 'sold'
+    .eq('status', 'available')
     .order('created_at', { ascending: false })
 
   return (
