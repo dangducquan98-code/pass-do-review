@@ -90,15 +90,20 @@ export default function AdminItemForm({ initialData }: { initialData?: ItemData 
       }
       
       // Call Server Action
+      let actionResult;
       if (isEditing && initialData?.id) {
-        await editItem(initialData.id, formData)
+        actionResult = await editItem(initialData.id, formData)
       } else {
-        await addItem(formData)
+        actionResult = await addItem(formData)
       }
       
-    } catch (error) {
+      if (actionResult?.error) {
+        throw new Error(actionResult.error)
+      }
+      
+    } catch (error: any) {
       console.error(error)
-      alert(`Có lỗi xảy ra khi ${isEditing ? 'cập nhật' : 'thêm'} đồ!`)
+      alert(`Lỗi: ${error.message || 'Không xác định'}`)
       setLoading(false)
     }
   }
