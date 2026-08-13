@@ -34,7 +34,8 @@ export default function ProductCard({ item }: { item: Item }) {
                 alt={item.name} 
                 fill 
                 className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out" 
-                sizes="(max-width: 768px) 40vw, (max-width: 1200px) 50vw, 33vw"
+                sizes="(max-width: 768px) 110px, (max-width: 1200px) 33vw, 25vw"
+                quality={65}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-neutral-400 text-sm font-medium bg-neutral-100">

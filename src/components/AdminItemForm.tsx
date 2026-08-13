@@ -120,7 +120,7 @@ export default function AdminItemForm({ initialData }: { initialData?: ItemData 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
           {existingImages.map((url, i) => (
             <div key={`exist-${i}`} className="relative aspect-square rounded-xl overflow-hidden bg-neutral-100 border border-neutral-200 group shadow-sm">
-              <Image src={url} alt="Product" fill className="object-cover" sizes="200px" />
+              <Image src={url} alt="Product" fill className="object-cover" sizes="200px" quality={65} />
               <button 
                 type="button" 
                 onClick={() => removeExistingImage(i)}
@@ -133,7 +133,7 @@ export default function AdminItemForm({ initialData }: { initialData?: ItemData 
 
           {previewUrls.map((url, i) => (
             <div key={`new-${i}`} className="relative aspect-square rounded-xl overflow-hidden bg-neutral-100 border border-neutral-200 group shadow-sm">
-              <Image src={url} alt="Preview" fill className="object-cover" sizes="200px" />
+              <Image src={url} alt="Preview" fill className="object-cover" sizes="200px" quality={65} />
               <button 
                 type="button" 
                 onClick={() => removeNewImage(i)}

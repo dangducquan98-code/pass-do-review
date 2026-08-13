@@ -133,7 +133,8 @@ export default function ImageGallery({ images, alt, children }: ImageGalleryProp
             alt={alt} 
             fill 
             className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out" 
-            sizes="(max-width: 768px) 40vw, (max-width: 1200px) 50vw, 33vw"
+            sizes="(max-width: 768px) 110px, (max-width: 1200px) 33vw, 25vw"
+            quality={65}
           />
           
           {/* Overlay on hover to indicate clickability */}
@@ -196,7 +197,8 @@ export default function ImageGallery({ images, alt, children }: ImageGalleryProp
                   alt={`${alt} - Ảnh ${currentIndex + 1}`} 
                   fill 
                   className="object-contain pointer-events-none" 
-                  sizes="100vw"
+                  sizes="(max-width: 1024px) 100vw, 1024px"
+                  quality={75}
                   priority
                 />
               </motion.div>

@@ -76,7 +76,7 @@ export default function SortableRow({ item }: { item: Item }) {
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 relative rounded-xl overflow-hidden bg-neutral-100 border border-neutral-200 flex-shrink-0 pointer-events-none">
             {item.images && item.images.length > 0 ? (
-              <Image src={item.images[0]} alt={item.name} fill className="object-cover" sizes="64px" />
+              <Image src={item.images[0]} alt={item.name} fill className="object-cover" sizes="64px" quality={60} />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-neutral-400 text-[10px] font-medium uppercase">No img</div>
             )}
