@@ -21,16 +21,7 @@ export default function ProductCard({ item }: { item: Item }) {
       <div className="relative w-[110px] md:w-full md:aspect-square overflow-hidden bg-neutral-100 flex-shrink-0 border-r md:border-r-0 md:border-b border-neutral-200 self-stretch">
         <ImageGallery images={item.images} alt={item.name} />
         
-        {/* Status Badge */}
-        <div className="absolute top-2 left-2 md:top-4 md:left-4 z-10">
-          <span className={`px-2 py-0.5 md:px-3 md:py-1.5 rounded-full text-[9px] md:text-xs font-bold tracking-wide backdrop-blur-md border shadow-sm ${
-            isAvailable 
-              ? 'bg-blue-50/90 text-blue-700 border-blue-200' 
-              : 'bg-white/90 text-neutral-500 border-neutral-200'
-          }`}>
-            {isAvailable ? 'CÒN HÀNG' : 'ĐÃ BÁN'}
-          </span>
-        </div>
+
 
         {/* Gradient Overlay (only on desktop) */}
         <div className="hidden md:block absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-60"></div>
