@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import { ChevronLeft, ChevronRight, X, Image as ImageIcon } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 type ImageGalleryProps = {
   images: string[]
@@ -13,6 +14,7 @@ type ImageGalleryProps = {
 export default function ImageGallery({ images, alt }: ImageGalleryProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [direction, setDirection] = useState(0) // 1 for next, -1 for prev
 
   const hasImages = images && images.length > 0
   const firstImage = hasImages ? images[0] : null
@@ -29,6 +31,7 @@ export default function ImageGallery({ images, alt }: ImageGalleryProps) {
   const openLightbox = () => {
     setIsOpen(true)
     setCurrentIndex(0)
+    setDirection(0)
     document.body.style.overflow = 'hidden' // Prevent background scrolling
   }
 
@@ -37,14 +40,78 @@ export default function ImageGallery({ images, alt }: ImageGalleryProps) {
     document.body.style.overflow = 'auto'
   }
 
-  const nextImage = (e: React.MouseEvent) => {
-    e.stopPropagation()
+  const nextImage = () => {
+    setDirection(1)
     setCurrentIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1))
   }
 
-  const prevImage = (e: React.MouseEvent) => {
-    e.stopPropagation()
+  const prevImage = () => {
+    setDirection(-1)
     setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1))
+  }
+
+  const [touchStart, setTouchStart] = useState<number | null>(null)
+  const [touchEnd, setTouchEnd] = useState<number | null>(null)
+
+  const minSwipeDistance = 50
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null)
+    setTouchStart(e.targetTouches[0].clientX)
+  }
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX)
+  }
+
+  const onMouseDown = (e: React.MouseEvent) => {
+    setTouchEnd(null)
+    setTouchStart(e.clientX)
+  }
+
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (touchStart !== null) {
+      setTouchEnd(e.clientX)
+    }
+  }
+
+  const onMouseUp = () => {
+    onTouchEndAction()
+    setTouchStart(null)
+    setTouchEnd(null)
+  }
+
+  const onTouchEndAction = () => {
+    if (!touchStart || !touchEnd) return
+    const distance = touchStart - touchEnd
+    const isLeftSwipe = distance > minSwipeDistance
+    const isRightSwipe = distance < -minSwipeDistance
+
+    if (isLeftSwipe && images.length > 1) {
+      nextImage()
+    }
+    if (isRightSwipe && images.length > 1) {
+      prevImage()
+    }
+    setTouchStart(null)
+    setTouchEnd(null)
+  }
+
+  const variants = {
+    enter: (direction: number) => ({
+      x: direction > 0 ? 1000 : -1000,
+      opacity: 0
+    }),
+    center: {
+      zIndex: 1,
+      x: 0,
+      opacity: 1
+    },
+    exit: (direction: number) => ({
+      zIndex: 0,
+      x: direction < 0 ? 1000 : -1000,
+      opacity: 0
+    })
   }
 
   return (
@@ -92,22 +159,47 @@ export default function ImageGallery({ images, alt }: ImageGalleryProps) {
           </button>
 
           {/* Main Image */}
-          <div className="relative w-full max-w-5xl h-[80vh] md:h-[90vh] mx-4 flex items-center justify-center">
-            <Image 
-              src={images[currentIndex]} 
-              alt={`${alt} - Ảnh ${currentIndex + 1}`} 
-              fill 
-              className="object-contain" 
-              sizes="100vw"
-              priority
-            />
+          <div 
+            className="relative w-full max-w-5xl h-[80vh] md:h-[90vh] mx-4 flex items-center justify-center overflow-hidden touch-pan-y select-none"
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEndAction}
+            onMouseDown={onMouseDown}
+            onMouseMove={onMouseMove}
+            onMouseUp={onMouseUp}
+            onMouseLeave={onMouseUp}
+          >
+            <AnimatePresence initial={false} custom={direction}>
+              <motion.div
+                key={currentIndex}
+                custom={direction}
+                variants={variants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{
+                  x: { type: "spring", stiffness: 300, damping: 30 },
+                  opacity: { duration: 0.2 }
+                }}
+                className="absolute inset-0 flex items-center justify-center"
+              >
+                <Image 
+                  src={images[currentIndex]} 
+                  alt={`${alt} - Ảnh ${currentIndex + 1}`} 
+                  fill 
+                  className="object-contain pointer-events-none" 
+                  sizes="100vw"
+                  priority
+                />
+              </motion.div>
+            </AnimatePresence>
           </div>
 
           {/* Navigation Buttons (Only show if multiple images) */}
           {images.length > 1 && (
             <>
               <button 
-                onClick={prevImage}
+                onClick={(e) => { e.stopPropagation(); prevImage(); }}
                 className="absolute left-2 md:left-8 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors backdrop-blur-md z-50"
                 title="Ảnh trước"
               >
@@ -115,7 +207,7 @@ export default function ImageGallery({ images, alt }: ImageGalleryProps) {
               </button>
               
               <button 
-                onClick={nextImage}
+                onClick={(e) => { e.stopPropagation(); nextImage(); }}
                 className="absolute right-2 md:right-8 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors backdrop-blur-md z-50"
                 title="Ảnh tiếp"
               >
@@ -123,7 +215,7 @@ export default function ImageGallery({ images, alt }: ImageGalleryProps) {
               </button>
 
               {/* Indicators */}
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 bg-neutral-900/50 backdrop-blur-md rounded-full border border-white/10 z-50">
+              <div className="absolute bottom-24 md:bottom-12 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 bg-neutral-900/50 backdrop-blur-md rounded-full border border-white/10 z-[200]">
                 {images.map((_, idx) => (
                   <div 
                     key={idx} 
