@@ -1,33 +1,39 @@
 'use client'
 
-import Image from 'next/image'
 import Link from 'next/link'
-import { MessageCircle } from 'lucide-react'
+import { motion } from 'framer-motion'
 
 export default function ZaloButton() {
   const zaloUrl = 'https://zalo.me/0976014798'
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
-      {/* Tooltip */}
-      <div className="bg-white px-4 py-2 text-sm font-semibold text-neutral-800 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.1)] border border-neutral-100 animate-bounce">
-        Liên hệ mua hàng
-        <div className="absolute -bottom-2 right-6 w-4 h-4 bg-white border-b border-r border-neutral-100 transform rotate-45"></div>
-      </div>
-      
-      {/* Button */}
+    <motion.div 
+      initial={{ y: 100, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ type: "spring", stiffness: 260, damping: 20, delay: 1 }}
+      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-sm"
+    >
       <Link
         href={zaloUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="group relative flex items-center justify-center w-14 h-14 bg-blue-500 hover:bg-blue-600 rounded-full shadow-[0_4px_14px_rgba(59,130,246,0.4)] hover:shadow-[0_6px_25px_rgba(59,130,246,0.6)] transition-all duration-300 hover:scale-110"
+        className="group relative flex items-center justify-between px-6 py-3.5 bg-neutral-900/90 hover:bg-neutral-900 backdrop-blur-xl rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-white/10 transition-all duration-300 hover:scale-[1.02]"
       >
-        {/* Simple Zalo Logo using text since we don't have an SVG handy, or use a chat icon */}
-        <span className="text-white font-extrabold text-xl tracking-tighter">Zalo</span>
+        <div className="flex items-center gap-3">
+          <div className="relative flex items-center justify-center w-8 h-8 bg-blue-500 rounded-full">
+            <span className="text-white font-black text-[10px] tracking-tighter">Zalo</span>
+            <div className="absolute inset-0 rounded-full border border-blue-400 opacity-50 animate-ping"></div>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-white font-bold text-sm">Nhắn Zalo chốt đơn</span>
+            <span className="text-neutral-400 text-xs font-medium">Hỗ trợ 24/7 (0976014798)</span>
+          </div>
+        </div>
         
-        {/* Pulsing rings effect */}
-        <div className="absolute inset-0 rounded-full border-2 border-blue-500 opacity-50 animate-ping"></div>
+        <div className="px-3 py-1.5 bg-white/10 text-white text-xs font-bold rounded-full group-hover:bg-white/20 transition-colors">
+          Chat ngay
+        </div>
       </Link>
-    </div>
+    </motion.div>
   )
 }
