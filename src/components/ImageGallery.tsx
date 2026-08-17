@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import { ChevronLeft, ChevronRight, X, Image as ImageIcon } from 'lucide-react'
@@ -20,14 +20,6 @@ export default function ImageGallery({ images, alt, children }: ImageGalleryProp
   const hasImages = images && images.length > 0
   const firstImage = hasImages ? images[0] : null
   const extraCount = hasImages ? images.length - 1 : 0
-
-  if (!hasImages) {
-    return (
-      <div className="w-full h-full flex items-center justify-center text-neutral-400 text-sm font-medium bg-neutral-100">
-        Không ảnh
-      </div>
-    )
-  }
 
   const openLightbox = () => {
     setIsOpen(true)
@@ -50,6 +42,32 @@ export default function ImageGallery({ images, alt, children }: ImageGalleryProp
   const prevImage = () => {
     setDirection(-1)
     setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1))
+  }
+
+  // Keyboard navigation (Arrow keys + Escape)
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        closeLightbox()
+      } else if (e.key === 'ArrowRight' && images.length > 1) {
+        nextImage()
+      } else if (e.key === 'ArrowLeft' && images.length > 1) {
+        prevImage()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, images.length])
+
+  if (!hasImages) {
+    return (
+      <div className="w-full h-full flex items-center justify-center text-neutral-400 text-sm font-medium bg-neutral-100">
+        Không ảnh
+      </div>
+    )
   }
 
   const [touchStart, setTouchStart] = useState<number | null>(null)
@@ -158,14 +176,19 @@ export default function ImageGallery({ images, alt, children }: ImageGalleryProp
       {/* Fullscreen Lightbox Modal */}
       {isOpen && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-xl">
-          {/* Close Button */}
-          <button 
-            onClick={closeLightbox}
-            className="absolute top-4 right-4 md:top-6 md:right-6 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors z-50 backdrop-blur-md"
-            title="Đóng"
-          >
-            <X className="w-6 h-6" />
-          </button>
+          {/* Top Bar with Counter & Close */}
+          <div className="absolute top-4 left-4 right-4 md:top-6 md:left-6 md:right-6 flex items-center justify-between z-50 pointer-events-none">
+            <div className="px-3 py-1.5 bg-white/10 backdrop-blur-md rounded-full text-white text-xs sm:text-sm font-bold border border-white/10 shadow-sm pointer-events-auto">
+              Ảnh {currentIndex + 1} / {images.length}
+            </div>
+            <button 
+              onClick={closeLightbox}
+              className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors z-50 backdrop-blur-md pointer-events-auto shadow-sm"
+              title="Đóng (ESC)"
+            >
+              <X className="w-5 h-5 sm:w-6 sm:h-6" />
+            </button>
+          </div>
 
           {/* Main Image */}
           <div 

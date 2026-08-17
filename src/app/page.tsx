@@ -3,7 +3,7 @@ import ZaloButton from '@/components/ZaloButton'
 import AnimatedHero from '@/components/AnimatedHero'
 import ProductSection from '@/components/ProductSection'
 
-export const revalidate = 0
+export const revalidate = 60
 
 type Props = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
@@ -11,29 +11,14 @@ type Props = {
 
 export default async function Home({ searchParams }: Props) {
   const params = await searchParams
-  const q = typeof params?.q === 'string' ? params.q : ''
   const tab = typeof params?.tab === 'string' ? params.tab : 'available'
 
-  // Fetch all items to get total counts and handle filtering
-  let queryBuilder = supabase
+  // Fetch all items with fast ISR caching
+  const { data: allItems, error } = await supabase
     .from('items')
     .select('*')
     .order('display_order', { ascending: true })
     .order('created_at', { ascending: false })
-
-  if (q) {
-    queryBuilder = queryBuilder.ilike('name', `%${q}%`)
-  }
-
-  const { data: allItems, error } = await queryBuilder
-
-  const availableItems = allItems?.filter(item => item.status === 'available') || []
-  const soldItems = allItems?.filter(item => item.status === 'sold') || []
-
-  // Items to display based on active tab
-  const displayedItems = tab === 'sold' 
-    ? soldItems 
-    : (tab === 'all' ? (allItems || []) : availableItems)
 
   return (
     <main className="min-h-screen bg-neutral-50 selection:bg-blue-500/20 overflow-x-hidden">

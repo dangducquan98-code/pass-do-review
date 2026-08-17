@@ -30,6 +30,9 @@ export default function ProductSection({ items, initialTab = 'available' }: Prod
     currentUrlTab === 'sold' ? 'sold' : 'available'
   )
 
+  const initialSearch = searchParams.get('q') || ''
+  const [searchQuery, setSearchQuery] = useState(initialSearch)
+
   useEffect(() => {
     const tabFromUrl = searchParams.get('tab')
     if (tabFromUrl === 'sold' || tabFromUrl === 'available') {
@@ -37,26 +40,50 @@ export default function ProductSection({ items, initialTab = 'available' }: Prod
     }
   }, [searchParams])
 
-  const handleTabChange = (newTab: 'available' | 'sold') => {
-    // Instant 0ms state change
-    setActiveTab(newTab)
-    
-    // Background URL sync without triggering RSC re-fetch
-    const params = new URLSearchParams(searchParams.toString())
-    if (newTab === 'available') {
-      params.delete('tab')
-    } else {
-      params.set('tab', newTab)
+  const updateUrl = (tabVal: 'available' | 'sold', queryVal: string) => {
+    const params = new URLSearchParams()
+    if (tabVal !== 'available') {
+      params.set('tab', tabVal)
+    }
+    if (queryVal.trim()) {
+      params.set('q', queryVal.trim())
     }
     const queryString = params.toString()
     const newUrl = queryString ? `${pathname}?${queryString}` : pathname
     window.history.replaceState(null, '', newUrl)
   }
 
-  const availableItems = items.filter(item => item.status === 'available')
-  const soldItems = items.filter(item => item.status === 'sold')
+  const handleTabChange = (newTab: 'available' | 'sold') => {
+    setActiveTab(newTab)
+    updateUrl(newTab, searchQuery)
+  }
+
+  const handleSearchChange = (newQuery: string) => {
+    setSearchQuery(newQuery)
+    updateUrl(activeTab, newQuery)
+  }
+
+  const handleResetSearch = () => {
+    setSearchQuery('')
+    setActiveTab('available')
+    updateUrl('available', '')
+  }
+
+  // Filter in memory for instant 0ms response
+  const queryLower = searchQuery.toLowerCase().trim()
+  const filteredBySearch = items.filter(item => {
+    if (!queryLower) return true
+    return item.name.toLowerCase().includes(queryLower)
+  })
+
+  const availableItems = filteredBySearch.filter(item => item.status === 'available')
+  const soldItems = filteredBySearch.filter(item => item.status === 'sold')
 
   const displayedItems = activeTab === 'sold' ? soldItems : availableItems
+
+  // Counts for tabs based on all items (or search matches)
+  const totalAvailable = items.filter(i => i.status === 'available').length
+  const totalSold = items.filter(i => i.status === 'sold').length
 
   return (
     <section id="products" className="py-8 md:py-16 px-3 sm:px-6 lg:px-8 max-w-7xl mx-auto relative z-10">
@@ -69,7 +96,12 @@ export default function ProductSection({ items, initialTab = 'available' }: Prod
               {activeTab === 'sold' ? 'Đồ Đã Thanh Lý' : 'Đồ Đang Có Sẵn'}
             </h2>
           </div>
-          <SearchBar placeholder="Tìm món đồ..." />
+          <SearchBar 
+            placeholder="Tìm món đồ theo tên..." 
+            value={searchQuery}
+            onChange={handleSearchChange}
+            onClear={() => handleSearchChange('')}
+          />
         </div>
 
         {/* Instant Client Tabs (0ms latency) */}
@@ -90,7 +122,7 @@ export default function ProductSection({ items, initialTab = 'available' }: Prod
                 activeTab === 'available' ? 'bg-white/20 text-white' : 'bg-neutral-300/60 text-neutral-700'
               }`}
             >
-              {availableItems.length}
+              {searchQuery ? availableItems.length : totalAvailable}
             </span>
           </button>
 
@@ -110,17 +142,33 @@ export default function ProductSection({ items, initialTab = 'available' }: Prod
                 activeTab === 'sold' ? 'bg-white/20 text-white' : 'bg-neutral-300/60 text-neutral-700'
               }`}
             >
-              {soldItems.length}
+              {searchQuery ? soldItems.length : totalSold}
             </span>
           </button>
         </div>
       </div>
 
-      {/* Animated Products Grid */}
-      <AnimatedProductGrid 
-        items={displayedItems} 
-        emptyMessage={activeTab === 'sold' ? 'Chưa có món đồ nào đã thanh lý.' : 'Hiện tại chưa có món đồ nào đang bán.'}
-      />
+      {/* Animated Products Grid or Custom Empty State */}
+      {displayedItems.length === 0 ? (
+        <div className="text-center p-12 md:p-16 bg-white/80 backdrop-blur-md border border-neutral-200/80 rounded-3xl shadow-xs space-y-4">
+          <p className="text-neutral-500 text-sm md:text-base font-medium">
+            {searchQuery 
+              ? `Không tìm thấy món đồ nào khớp với từ khóa "${searchQuery}".`
+              : (activeTab === 'sold' ? 'Chưa có món đồ nào đã thanh lý.' : 'Hiện tại không có món đồ nào đang pass.')}
+          </p>
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={handleResetSearch}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-xs transition-all cursor-pointer"
+            >
+              <span>Xem tất cả đồ đang bán</span>
+            </button>
+          )}
+        </div>
+      ) : (
+        <AnimatedProductGrid items={displayedItems} />
+      )}
     </section>
   )
 }
