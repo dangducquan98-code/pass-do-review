@@ -34,7 +34,7 @@ export default function AnimatedHero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
-          className="text-[15px] sm:text-2xl md:text-4xl font-black tracking-tight animate-shimmer bg-[linear-gradient(110deg,#171717,45%,#a3a3a3,55%,#171717)] bg-[length:200%_100%] bg-clip-text text-transparent whitespace-nowrap"
+          className="text-lg sm:text-2xl md:text-4xl font-black tracking-tight text-neutral-900"
         >
           Săn Đồ Giá Rẻ, Chất Lượng Như Mới
         </motion.h1>
@@ -43,7 +43,7 @@ export default function AnimatedHero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
-          className="mt-3 text-[11px] sm:text-sm md:text-lg text-neutral-500 max-w-lg mx-auto font-medium"
+          className="mt-2 text-xs sm:text-sm md:text-base text-neutral-500 max-w-lg mx-auto font-medium"
         >
           100% hàng mới, chỉ unbox quay video rồi đóng gói lại cẩn thận.
         </motion.p>

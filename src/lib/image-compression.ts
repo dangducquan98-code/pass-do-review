@@ -2,9 +2,10 @@ import imageCompression from 'browser-image-compression';
 
 export async function compressImage(file: File) {
   const options = {
-    maxSizeMB: 1, // Max size in MB
-    maxWidthOrHeight: 1920, // Max width or height
+    maxSizeMB: 0.6, // Max size 600KB
+    maxWidthOrHeight: 1600, // Max width/height for crisp display without bloat
     useWebWorker: true,
+    initialQuality: 0.82,
     fileType: 'image/webp' as string, // Convert to webp
   };
 

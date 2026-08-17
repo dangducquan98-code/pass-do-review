@@ -28,11 +28,19 @@ const itemVariant: Variants = {
   show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
 }
 
-export default function AnimatedProductGrid({ items }: { items: Item[] }) {
+export default function AnimatedProductGrid({ 
+  items, 
+  emptyMessage 
+}: { 
+  items: Item[]
+  emptyMessage?: string 
+}) {
   if (!items || items.length === 0) {
     return (
-      <div className="text-center p-20 bg-white border border-neutral-200 border-dashed rounded-3xl shadow-sm">
-        <p className="text-neutral-500 text-lg">Hiện tại không có món đồ nào đang pass. <br/>Bạn quay lại sau nhé!</p>
+      <div className="text-center p-16 md:p-20 bg-white/70 backdrop-blur-md border border-neutral-200 border-dashed rounded-3xl shadow-sm">
+        <p className="text-neutral-500 text-base md:text-lg font-medium">
+          {emptyMessage || 'Hiện tại không có món đồ nào. Bạn quay lại sau nhé!'}
+        </p>
       </div>
     )
   }
@@ -42,11 +50,11 @@ export default function AnimatedProductGrid({ items }: { items: Item[] }) {
       variants={container}
       initial="hidden"
       animate="show"
-      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8"
+      className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6 lg:gap-8"
     >
-      {items.map((item) => (
+      {items.map((item, index) => (
         <motion.div key={item.id} variants={itemVariant} className="h-full">
-          <ProductCard item={item} />
+          <ProductCard item={item} priority={index < 4} />
         </motion.div>
       ))}
     </motion.div>

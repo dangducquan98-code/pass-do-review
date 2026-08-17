@@ -7,6 +7,8 @@ import { addItem, editItem } from '@/app/actions'
 import { UploadCloud, Loader2, X } from 'lucide-react'
 import Image from 'next/image'
 
+import { toast } from 'sonner'
+
 type ItemData = {
   id?: string
   name: string
@@ -60,6 +62,7 @@ export default function AdminItemForm({ initialData }: { initialData?: ItemData 
       
       // Upload new images to Supabase
       if (newImageFiles.length > 0) {
+        toast.loading('Đang tối ưu và tải ảnh lên kho...', { id: 'upload-toast' })
         const uploadPromises = newImageFiles.map(async (file) => {
           const compressedFile = await compressImage(file)
           const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.webp`
@@ -81,6 +84,7 @@ export default function AdminItemForm({ initialData }: { initialData?: ItemData 
         })
 
         uploadedUrls = await Promise.all(uploadPromises)
+        toast.dismiss('upload-toast')
       }
 
       const allImages = [...existingImages, ...uploadedUrls]
@@ -89,6 +93,8 @@ export default function AdminItemForm({ initialData }: { initialData?: ItemData 
         formData.append('status', 'available')
       }
       
+      toast.success(isEditing ? 'Đã cập nhật sản phẩm thành công!' : 'Đã thêm sản phẩm mới thành công!')
+
       // Call Server Action
       let actionResult;
       if (isEditing && initialData?.id) {
@@ -106,42 +112,46 @@ export default function AdminItemForm({ initialData }: { initialData?: ItemData 
         throw error
       }
       console.error(error)
-      alert(`Lỗi: ${error.message || 'Không xác định'}`)
+      toast.error(`Lỗi: ${error.message || 'Không xác định'}`)
       setLoading(false)
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white border border-neutral-200 rounded-2xl p-6 md:p-8 space-y-8 shadow-sm">
+    <form onSubmit={handleSubmit} className="bg-white border border-neutral-200 rounded-2xl p-4 sm:p-6 md:p-8 space-y-6 sm:space-y-8 shadow-sm">
       {/* Image Upload */}
       <div>
-        <label className="block text-sm font-bold text-neutral-900 mb-3">Hình ảnh sản phẩm <span className="text-neutral-400 font-normal">(có thể chọn nhiều ảnh)</span></label>
+        <label className="block text-xs sm:text-sm font-bold text-neutral-900 mb-2 sm:mb-3">
+          Hình ảnh sản phẩm <span className="text-neutral-400 font-normal">(chọn 1 hoặc nhiều ảnh)</span>
+        </label>
         
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2.5 sm:gap-4 mb-2">
           {existingImages.map((url, i) => (
-            <div key={`exist-${i}`} className="relative aspect-square rounded-xl overflow-hidden bg-neutral-100 border border-neutral-200 group shadow-sm">
-              <Image src={url} alt="Product" fill className="object-cover" sizes="200px" quality={65} />
+            <div key={`exist-${i}`} className="relative aspect-square rounded-xl overflow-hidden bg-neutral-100 border border-neutral-200 group shadow-xs">
+              <Image src={url} alt="Product" fill className="object-cover" sizes="150px" quality={65} />
               <button 
                 type="button" 
                 onClick={() => removeExistingImage(i)}
-                className="absolute top-2 right-2 p-1.5 bg-red-500/90 hover:bg-red-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm"
+                className="absolute top-1.5 right-1.5 p-1 bg-red-600/90 text-white rounded-md opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-xs shadow-xs"
+                title="Xóa ảnh này"
               >
-                <X className="w-4 h-4" />
+                <X className="w-3.5 h-3.5" />
               </button>
             </div>
           ))}
 
           {previewUrls.map((url, i) => (
-            <div key={`new-${i}`} className="relative aspect-square rounded-xl overflow-hidden bg-neutral-100 border border-neutral-200 group shadow-sm">
-              <Image src={url} alt="Preview" fill className="object-cover" sizes="200px" quality={65} />
+            <div key={`new-${i}`} className="relative aspect-square rounded-xl overflow-hidden bg-neutral-100 border border-neutral-200 group shadow-xs">
+              <Image src={url} alt="Preview" fill className="object-cover" sizes="150px" quality={65} />
               <button 
                 type="button" 
                 onClick={() => removeNewImage(i)}
-                className="absolute top-2 right-2 p-1.5 bg-red-500/90 hover:bg-red-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm"
+                className="absolute top-1.5 right-1.5 p-1 bg-red-600/90 text-white rounded-md opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-xs shadow-xs"
+                title="Xóa ảnh này"
               >
-                <X className="w-4 h-4" />
+                <X className="w-3.5 h-3.5" />
               </button>
-              <div className="absolute bottom-2 left-2 px-2 py-1 bg-blue-600/90 text-white text-[10px] font-bold rounded shadow-sm backdrop-blur-sm">MỚI</div>
+              <div className="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 bg-blue-600/90 text-white text-[9px] font-bold rounded shadow-xs backdrop-blur-xs">MỚI</div>
             </div>
           ))}
 
@@ -153,71 +163,71 @@ export default function AdminItemForm({ initialData }: { initialData?: ItemData 
               onChange={handleImageChange}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
             />
-            <div className="text-center text-neutral-500">
-              <UploadCloud className="mx-auto h-8 w-8 mb-2 text-neutral-400" />
-              <span className="text-xs font-semibold">Thêm ảnh</span>
+            <div className="text-center text-neutral-500 p-1">
+              <UploadCloud className="mx-auto h-5 w-5 sm:h-7 sm:w-7 mb-1 text-neutral-400" />
+              <span className="text-[11px] sm:text-xs font-semibold block leading-tight">Thêm ảnh</span>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2">
         <div className="md:col-span-2">
-          <label className="block text-sm font-bold text-neutral-900 mb-2">Tên món đồ</label>
+          <label className="block text-xs sm:text-sm font-bold text-neutral-900 mb-1.5">Tên món đồ</label>
           <input
             type="text"
             name="name"
             defaultValue={initialData?.name}
             required
-            className="w-full px-4 py-3 bg-white border border-neutral-300 rounded-xl text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm"
+            className="w-full px-3.5 py-2.5 sm:py-3 bg-white border border-neutral-300 rounded-xl text-neutral-900 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-xs"
             placeholder="Ví dụ: Bàn phím cơ Keychron Q1"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-neutral-900 mb-2">Giá gốc (VND)</label>
+          <label className="block text-xs sm:text-sm font-bold text-neutral-900 mb-1.5">Giá gốc (VND)</label>
           <input
             type="number"
             name="original_price"
             defaultValue={initialData?.original_price || ''}
-            className="w-full px-4 py-3 bg-white border border-neutral-300 rounded-xl text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm"
+            className="w-full px-3.5 py-2.5 sm:py-3 bg-white border border-neutral-300 rounded-xl text-neutral-900 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-xs"
             placeholder="3000000"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-neutral-900 mb-2">Giá bán lại (VND)</label>
+          <label className="block text-xs sm:text-sm font-bold text-neutral-900 mb-1.5">Giá bán lại (VND)</label>
           <input
             type="number"
             name="sell_price"
             defaultValue={initialData?.sell_price}
             required
-            className="w-full px-4 py-3 bg-white border border-neutral-300 rounded-xl text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm"
+            className="w-full px-3.5 py-2.5 sm:py-3 bg-white border border-neutral-300 rounded-xl text-neutral-900 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-xs"
             placeholder="1500000"
           />
         </div>
 
         <div className="md:col-span-2">
-          <label className="block text-sm font-bold text-neutral-900 mb-2">Link Shopee/TikTok (Affiliate)</label>
+          <label className="block text-xs sm:text-sm font-bold text-neutral-900 mb-1.5">Link Shopee/TikTok (Affiliate)</label>
           <input
             type="url"
             name="affiliate_link"
             defaultValue={initialData?.affiliate_link || ''}
-            className="w-full px-4 py-3 bg-white border border-neutral-300 rounded-xl text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm"
+            className="w-full px-3.5 py-2.5 sm:py-3 bg-white border border-neutral-300 rounded-xl text-neutral-900 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-xs"
             placeholder="https://shope.ee/..."
           />
         </div>
 
         {isEditing && (
           <div className="md:col-span-2">
-            <label className="block text-sm font-bold text-neutral-900 mb-2">Trạng thái</label>
+            <label className="block text-xs sm:text-sm font-bold text-neutral-900 mb-1.5">Trạng thái</label>
             <select
               name="status"
               defaultValue={initialData?.status}
-              className="w-full px-4 py-3 bg-white border border-neutral-300 rounded-xl text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm cursor-pointer"
+              className="w-full px-3.5 py-2.5 sm:py-3 bg-white border border-neutral-300 rounded-xl text-neutral-900 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-xs cursor-pointer"
             >
-              <option value="available">Còn hàng</option>
-              <option value="sold">Đã bán</option>
+              <option value="available">Còn hàng (Đang bán)</option>
+              <option value="sold">Đã bán (Đã thanh lý)</option>
             </select>
           </div>
         )}
