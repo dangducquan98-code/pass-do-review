@@ -21,7 +21,7 @@ export default async function Home({ searchParams }: Props) {
     .order('created_at', { ascending: false })
 
   return (
-    <main className="min-h-screen bg-neutral-50 selection:bg-blue-500/20 overflow-x-hidden">
+    <main className="min-h-screen bg-background selection:bg-brand/20 overflow-x-hidden">
       {/* Animated Hero Section */}
       <AnimatedHero />
 
@@ -34,7 +34,7 @@ export default async function Home({ searchParams }: Props) {
         )}
 
       {/* Footer */}
-      <footer className="border-t border-neutral-200 py-10 text-center mt-12 bg-white">
+      <footer className="border-t border-line py-10 px-4 text-center mt-12 bg-surface">
         <p className="text-neutral-500 text-sm">
           © {new Date().getFullYear()} Góc Review. Mọi thắc mắc liên hệ qua Zalo của mình.
         </p>

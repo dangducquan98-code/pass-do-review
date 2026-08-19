@@ -6,7 +6,7 @@ import Marquee from './Marquee'
 
 export default function AnimatedHero() {
   return (
-    <section className="relative pt-12 pb-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center border-b border-neutral-200 overflow-hidden">
+    <section className="relative pt-10 pb-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center overflow-hidden">
       
       {/* Subtle Animated Background Grid */}
       <div className="absolute inset-0 z-0 opacity-[0.03] pointer-events-none" 

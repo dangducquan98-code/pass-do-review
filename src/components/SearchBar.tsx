@@ -70,8 +70,9 @@ export default function SearchBar({
         <Search className={`w-4 h-4 sm:w-5 sm:h-5 ${isPending ? 'text-blue-500 animate-pulse' : 'text-neutral-400'}`} />
       </div>
       <input
-        type="text"
-        className="block w-full pl-9 sm:pl-10 pr-9 py-2 sm:py-2.5 bg-white border border-neutral-300 rounded-xl text-neutral-900 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-xs"
+        type="search"
+        aria-label={placeholder}
+        className="block w-full pl-10 pr-10 py-3 bg-white border border-line rounded-2xl text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand transition-all shadow-sm placeholder:text-muted"
         placeholder={placeholder}
         value={currentVal}
         onChange={handleInputChange}

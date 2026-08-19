@@ -86,13 +86,13 @@ export default function ProductSection({ items, initialTab = 'available' }: Prod
   const totalSold = items.filter(i => i.status === 'sold').length
 
   return (
-    <section id="products" className="py-8 md:py-16 px-3 sm:px-6 lg:px-8 max-w-7xl mx-auto relative z-10">
+    <section id="products" aria-labelledby="products-heading" className="py-8 md:py-14 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto relative z-10">
       <div className="flex flex-col gap-6 mb-8">
         {/* Title and Search */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <PackageSearch className="w-7 h-7 text-blue-600 flex-shrink-0" />
-            <h2 className="text-xl sm:text-3xl font-extrabold text-neutral-900 tracking-tight">
+            <h2 id="products-heading" className="text-xl sm:text-3xl font-extrabold text-foreground tracking-tight text-balance">
               {activeTab === 'sold' ? 'Đồ Đã Thanh Lý' : 'Đồ Đang Có Sẵn'}
             </h2>
           </div>

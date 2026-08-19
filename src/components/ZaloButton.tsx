@@ -11,7 +11,7 @@ export default function ZaloButton() {
       initial={{ y: 100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.8 }}
-      className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] md:bottom-8 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-sm"
+      className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] md:bottom-8 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-sm"
     >
       <Link
         href={zaloUrl}
