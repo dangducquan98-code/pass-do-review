@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { logout } from '@/app/actions'
-import { LayoutDashboard, PlusCircle, LogOut, ExternalLink, Package } from 'lucide-react'
+import { LayoutDashboard, PlusCircle, LogOut, ExternalLink, Package, Sparkles } from 'lucide-react'
 
 export default function AdminDashboardLayout({
   children,
@@ -21,10 +21,18 @@ export default function AdminDashboardLayout({
         <nav className="flex items-center gap-1.5">
           <Link
             href="/admin/dashboard"
-            className="flex items-center gap-1 px-2.5 py-1.5 text-neutral-700 hover:text-blue-700 text-xs font-semibold rounded-lg hover:bg-neutral-100 transition-all"
+            className="flex items-center gap-1 px-2 py-1.5 text-neutral-700 hover:text-blue-700 text-xs font-semibold rounded-lg hover:bg-neutral-100 transition-all"
           >
             <LayoutDashboard className="w-4 h-4" />
-            <span>Kho</span>
+            <span className="hidden sm:inline">Kho</span>
+          </Link>
+
+          <Link
+            href="/admin/dashboard/ai-media"
+            className="flex items-center gap-1 px-2 py-1.5 text-purple-700 hover:text-purple-900 text-xs font-bold rounded-lg bg-purple-50 hover:bg-purple-100 transition-all"
+          >
+            <Sparkles className="w-4 h-4 text-purple-600" />
+            <span>AI Bot</span>
           </Link>
 
           <Link
@@ -72,6 +80,16 @@ export default function AdminDashboardLayout({
           >
             <LayoutDashboard className="w-5 h-5 text-neutral-500" />
             <span>Danh sách kho</span>
+          </Link>
+          <Link
+            href="/admin/dashboard/ai-media"
+            className="flex items-center gap-3 px-4 py-3 text-purple-700 bg-purple-50/70 hover:bg-purple-100/70 font-semibold rounded-xl transition-all border border-purple-100/50"
+          >
+            <Sparkles className="w-5 h-5 text-purple-600" />
+            <div className="flex items-center justify-between flex-1">
+              <span>Kho ảnh AI</span>
+              <span className="px-1.5 py-0.5 text-[10px] font-black uppercase bg-purple-600 text-white rounded">Bot</span>
+            </div>
           </Link>
           <Link
             href="/admin/dashboard/add"

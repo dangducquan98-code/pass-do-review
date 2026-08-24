@@ -180,3 +180,63 @@ export async function updateItemsOrder(items: { id: string; display_order: numbe
   
   return { success: true }
 }
+
+export async function bulkAddAiMedia(data: { item_id?: string | null; image_urls: string[]; notes?: string }) {
+  const records = data.image_urls.map(url => ({
+    item_id: data.item_id || null,
+    image_url: url,
+    notes: data.notes || null,
+    is_posted: false
+  }))
+
+  const { error } = await supabase
+    .from('ai_media')
+    .insert(records)
+
+  if (error) {
+    console.error('Error adding AI media:', error)
+    return { error: error.message }
+  }
+
+  revalidatePath('/admin/dashboard/ai-media')
+  return { success: true, count: records.length }
+}
+
+export async function toggleAiMediaStatus(id: string, is_posted: boolean) {
+  const { error } = await supabase
+    .from('ai_media')
+    .update({ 
+      is_posted, 
+      posted_at: is_posted ? new Date().toISOString() : null 
+    })
+    .eq('id', id)
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  revalidatePath('/admin/dashboard/ai-media')
+  return { success: true }
+}
+
+export async function deleteAiMedia(id: string, imageUrl: string) {
+  // 1. Clean up storage file
+  const fileNames = extractStorageFileNames([imageUrl])
+  if (fileNames.length > 0) {
+    await supabase.storage.from('item-images').remove(fileNames)
+  }
+
+  // 2. Delete record
+  const { error } = await supabase
+    .from('ai_media')
+    .delete()
+    .eq('id', id)
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  revalidatePath('/admin/dashboard/ai-media')
+  return { success: true }
+}
+
