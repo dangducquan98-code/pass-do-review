@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { logout } from '@/app/actions'
-import { LayoutDashboard, PlusCircle, LogOut, ExternalLink, Package, Sparkles } from 'lucide-react'
+import { LayoutDashboard, PlusCircle, LogOut, ExternalLink, Sparkles } from 'lucide-react'
 
 export default function AdminDashboardLayout({
   children,

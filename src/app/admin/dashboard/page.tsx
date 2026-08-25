@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import SearchBar from '@/components/SearchBar'
-import SortableAdminList from '@/components/SortableAdminList'
+import SortableAdminListLazy from '@/components/SortableAdminListLazy'
 import { Package, DollarSign, CheckCircle2, Plus } from 'lucide-react'
 import Link from 'next/link'
 
@@ -101,7 +101,7 @@ export default async function AdminDashboard({ searchParams }: Props) {
           </div>
         </div>
         
-        <SortableAdminList initialItems={allItems} />
+        <SortableAdminListLazy initialItems={allItems} />
       </div>
     </div>
   )

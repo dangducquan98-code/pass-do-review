@@ -9,18 +9,34 @@ const inter = Inter({
   subsets: ["latin", "vietnamese"],
 });
 
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL || "https://pass-do-review.vercel.app";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "Góc Pass Đồ Review | Săn Đồ Giá Rẻ Như Mới",
-  description: "Thanh lý đồ review công nghệ, gia dụng mới 99-100%, ảnh thực tế tự chụp, freeship nội thành, rẻ hơn sàn ít nhất 20%.",
-  keywords: ["pass đồ review", "thanh lý đồ công nghệ", "đồ review giá rẻ", "thanh lý giá rẻ", "pass đồ"],
+  description:
+    "Thanh lý đồ review công nghệ, gia dụng mới 99-100%, ảnh thực tế tự chụp, freeship nội thành, rẻ hơn sàn ít nhất 20%.",
+  keywords: [
+    "pass đồ review",
+    "thanh lý đồ công nghệ",
+    "đồ review giá rẻ",
+    "thanh lý giá rẻ",
+    "pass đồ",
+  ],
   authors: [{ name: "Góc Review" }],
   creator: "Góc Review",
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     title: "Góc Pass Đồ Review | Săn Đồ Giá Rẻ Như Mới",
-    description: "Thanh lý đồ review công nghệ, gia dụng mới 99-100%, ảnh thực tế tự chụp, rẻ hơn sàn ít nhất 20%.",
+    description:
+      "Thanh lý đồ review công nghệ, gia dụng mới 99-100%, ảnh thực tế tự chụp, rẻ hơn sàn ít nhất 20%.",
     type: "website",
     locale: "vi_VN",
     siteName: "Góc Pass Đồ Review",
+    url: SITE_URL,
   },
   twitter: {
     card: "summary_large_image",

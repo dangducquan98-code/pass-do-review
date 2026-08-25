@@ -6,27 +6,9 @@ import { toggleAiMediaStatus, deleteAiMedia } from '@/app/actions'
 import { Trash2, CheckCircle2, Clock, ExternalLink, Sparkles, Filter, Copy, Check } from 'lucide-react'
 import { toast } from 'sonner'
 
-export type AiMediaItem = {
-  id: string
-  item_id: string | null
-  image_url: string
-  is_posted: boolean
-  posted_at: string | null
-  platform: string
-  notes: string | null
-  created_at: string
-  items?: {
-    id: string
-    name: string
-    sell_price: number
-    status: string
-  } | null
-}
+import type { AiMediaItem, ItemOption } from '@/lib/types'
 
-type ItemOption = {
-  id: string
-  name: string
-}
+export type { AiMediaItem }
 
 type Props = {
   initialMedia: AiMediaItem[]

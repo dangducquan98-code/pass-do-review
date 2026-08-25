@@ -1,20 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import { Store, MessageCircle, CheckCircle2 } from 'lucide-react'
+import { Store, CheckCircle2, Image as ImageIcon } from 'lucide-react'
 import ImageGallery from './ImageGallery'
 import Image from 'next/image'
-import { Image as ImageIcon } from 'lucide-react'
-
-type Item = {
-  id: string
-  name: string
-  original_price: number | null
-  sell_price: number
-  status: string
-  images: string[]
-  affiliate_link: string | null
-}
+import type { Item } from '@/lib/types'
 
 export default function ProductCard({ 
   item, 

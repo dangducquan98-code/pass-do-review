@@ -8,18 +8,8 @@ import { Pencil, Trash2, Power, GripVertical } from 'lucide-react'
 import { updateItemStatus, deleteItem } from '@/app/actions'
 import { useRouter } from 'next/navigation'
 import { useTransition } from 'react'
-
-type Item = {
-  id: string
-  name: string
-  original_price: number | null
-  sell_price: number
-  status: string
-  images: string[]
-  affiliate_link: string | null
-}
-
 import { toast } from 'sonner'
+import type { Item } from '@/lib/types'
 
 type SortableRowProps = {
   item: Item
