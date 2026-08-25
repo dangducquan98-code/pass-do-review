@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useEffect } from 'react'
+import { useState, useTransition, useSyncExternalStore } from 'react'
 import {
   DndContext,
   closestCenter,
@@ -8,7 +8,7 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  DragEndEvent
+  DragEndEvent,
 } from '@dnd-kit/core'
 import {
   arrayMove,
@@ -20,44 +20,37 @@ import { restrictToVerticalAxis, restrictToWindowEdges } from '@dnd-kit/modifier
 import { updateItemsOrder } from '@/app/actions'
 import SortableRow from './SortableRow'
 import { toast } from 'sonner'
+import type { Item } from '@/lib/types'
 
-type Item = {
-  id: string
-  name: string
-  original_price: number | null
-  sell_price: number
-  status: string
-  images: string[]
-  affiliate_link: string | null
-  display_order?: number
-}
+const emptySubscribe = () => () => {}
 
 export default function SortableAdminList({ initialItems }: { initialItems: Item[] }) {
   const [items, setItems] = useState<Item[]>(initialItems)
+  const [prevInitialItems, setPrevInitialItems] = useState(initialItems)
   const [statusFilter, setStatusFilter] = useState<'all' | 'available' | 'sold'>('all')
   const [isPending, startTransition] = useTransition()
-  const [isMounted, setIsMounted] = useState(false)
+  const isMounted = useSyncExternalStore(emptySubscribe, () => true, () => false)
 
-  useEffect(() => {
-    setIsMounted(true)
-  }, [])
-
-  useEffect(() => {
+  // Sync list when server props change (no effect / no setState-in-effect)
+  if (initialItems !== prevInitialItems) {
+    setPrevInitialItems(initialItems)
     setItems(initialItems)
-  }, [initialItems])
+  }
 
   const handleStatusChange = (id: string, newStatus: string) => {
-    setItems(prev => prev.map(item => item.id === id ? { ...item, status: newStatus } : item))
+    setItems((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, status: newStatus } : item))
+    )
   }
 
   const handleItemDelete = (id: string) => {
-    setItems(prev => prev.filter(item => item.id !== id))
+    setItems((prev) => prev.filter((item) => item.id !== id))
   }
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8, // require 8px movement before drag starts (to allow clicking buttons inside)
+        distance: 8,
       },
     }),
     useSensor(KeyboardSensor, {
@@ -76,11 +69,10 @@ export default function SortableAdminList({ initialItems }: { initialItems: Item
         const newItems = arrayMove(items, oldIndex, newIndex)
         setItems(newItems)
 
-        // Save to server
         startTransition(async () => {
           const itemsToUpdate = newItems.map((item, index) => ({
             id: item.id,
-            display_order: index
+            display_order: index,
           }))
           const res = await updateItemsOrder(itemsToUpdate)
           if (res?.error) {
@@ -93,9 +85,9 @@ export default function SortableAdminList({ initialItems }: { initialItems: Item
     }
   }
 
-  const availableCount = items.filter(i => i.status === 'available').length
-  const soldCount = items.filter(i => i.status === 'sold').length
-  const filteredItems = items.filter(item => {
+  const availableCount = items.filter((i) => i.status === 'available').length
+  const soldCount = items.filter((i) => i.status === 'sold').length
+  const filteredItems = items.filter((item) => {
     if (statusFilter === 'available') return item.status === 'available'
     if (statusFilter === 'sold') return item.status === 'sold'
     return true
@@ -111,7 +103,6 @@ export default function SortableAdminList({ initialItems }: { initialItems: Item
 
   return (
     <div className="space-y-4">
-      {/* Filter Tabs */}
       <div className="flex items-center gap-1.5 p-1 bg-neutral-200/60 backdrop-blur-md rounded-2xl border border-neutral-300/40 w-fit">
         <button
           type="button"
@@ -123,9 +114,13 @@ export default function SortableAdminList({ initialItems }: { initialItems: Item
           }`}
         >
           <span>Tất cả</span>
-          <span className={`text-[10px] sm:text-xs px-1.5 py-0.5 rounded-md font-extrabold ${
-            statusFilter === 'all' ? 'bg-white/20 text-white' : 'bg-neutral-300/60 text-neutral-700'
-          }`}>
+          <span
+            className={`text-[10px] sm:text-xs px-1.5 py-0.5 rounded-md font-extrabold ${
+              statusFilter === 'all'
+                ? 'bg-white/20 text-white'
+                : 'bg-neutral-300/60 text-neutral-700'
+            }`}
+          >
             {items.length}
           </span>
         </button>
@@ -140,9 +135,13 @@ export default function SortableAdminList({ initialItems }: { initialItems: Item
           }`}
         >
           <span>Đang bán</span>
-          <span className={`text-[10px] sm:text-xs px-1.5 py-0.5 rounded-md font-extrabold ${
-            statusFilter === 'available' ? 'bg-white/20 text-white' : 'bg-neutral-300/60 text-neutral-700'
-          }`}>
+          <span
+            className={`text-[10px] sm:text-xs px-1.5 py-0.5 rounded-md font-extrabold ${
+              statusFilter === 'available'
+                ? 'bg-white/20 text-white'
+                : 'bg-neutral-300/60 text-neutral-700'
+            }`}
+          >
             {availableCount}
           </span>
         </button>
@@ -157,36 +156,39 @@ export default function SortableAdminList({ initialItems }: { initialItems: Item
           }`}
         >
           <span>Đã thanh lý</span>
-          <span className={`text-[10px] sm:text-xs px-1.5 py-0.5 rounded-md font-extrabold ${
-            statusFilter === 'sold' ? 'bg-white/20 text-white' : 'bg-neutral-300/60 text-neutral-700'
-          }`}>
+          <span
+            className={`text-[10px] sm:text-xs px-1.5 py-0.5 rounded-md font-extrabold ${
+              statusFilter === 'sold'
+                ? 'bg-white/20 text-white'
+                : 'bg-neutral-300/60 text-neutral-700'
+            }`}
+          >
             {soldCount}
           </span>
         </button>
       </div>
 
-      {/* List Container */}
       <div className="bg-white border border-neutral-200 rounded-2xl overflow-hidden shadow-sm">
         {filteredItems.length === 0 ? (
           <div className="p-12 text-center text-neutral-500 font-medium">
             Không có món đồ nào ở trạng thái này.
           </div>
         ) : (
-          <DndContext 
+          <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
             modifiers={[restrictToVerticalAxis, restrictToWindowEdges]}
             onDragEnd={handleDragEnd}
           >
             <div className="divide-y divide-neutral-100">
-              <SortableContext 
-                items={filteredItems.map(i => i.id)}
+              <SortableContext
+                items={filteredItems.map((i) => i.id)}
                 strategy={verticalListSortingStrategy}
               >
                 {filteredItems.map((item) => (
-                  <SortableRow 
-                    key={item.id} 
-                    item={item} 
+                  <SortableRow
+                    key={item.id}
+                    item={item}
                     onStatusChange={handleStatusChange}
                     onDelete={handleItemDelete}
                   />

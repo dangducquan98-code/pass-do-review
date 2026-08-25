@@ -2,8 +2,7 @@
 
 import { useState } from 'react'
 import { compressImage } from '@/lib/image-compression'
-import { supabase } from '@/lib/supabase'
-import { bulkAddAiMedia } from '@/app/actions'
+import { bulkAddAiMedia, uploadImage } from '@/app/actions'
 import { UploadCloud, Loader2, X, Sparkles, CheckCircle2 } from 'lucide-react'
 import Image from 'next/image'
 import { toast } from 'sonner'
@@ -87,23 +86,16 @@ export default function AiMediaUploader({ items, onUploadSuccess }: Props) {
           stage: `Đang tải lên Supabase ${i + 1}/${totalFiles}...`
         })
 
-        const fileName = `ai/${Date.now()}-${Math.random().toString(36).substring(7)}.webp`
-        const { error: storageError } = await supabase.storage
-          .from('item-images')
-          .upload(fileName, compressedFile, {
-            cacheControl: '31536000', // 1 year cache
-            upsert: false
-          })
+        const uploadData = new FormData()
+        uploadData.append('file', compressedFile)
+        uploadData.append('prefix', 'ai/')
 
-        if (storageError) {
-          throw new Error(`Lỗi upload ảnh ${file.name}: ${storageError.message}`)
+        const result = await uploadImage(uploadData)
+        if (result.error || !result.url) {
+          throw new Error(`Lỗi upload ảnh ${file.name}: ${result.error || 'Upload thất bại'}`)
         }
 
-        const { data: publicUrlData } = supabase.storage
-          .from('item-images')
-          .getPublicUrl(fileName)
-
-        uploadedUrls.push(publicUrlData.publicUrl)
+        uploadedUrls.push(result.url)
       }
 
       // Step 3: Insert records into ai_media table

@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Góc Pass Đồ Review
 
-## Getting Started
+Web bán / pass đồ review (công nghệ, gia dụng): trang public + admin PIN + kho ảnh AI cho bot Hermes.
 
-First, run the development server:
+**Stack:** Next.js 16 (App Router) · React 19 · Supabase · Vercel
+
+## Setup local
 
 ```bash
+npm install
+cp .env.example .env.local   # điền giá trị thật (không commit)
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Mở [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Biến môi trường (`.env.local`)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Biến | Ghi chú |
+|------|---------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Project URL Supabase |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Anon key (chỉ SELECT public) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server-only — write DB/storage |
+| `ADMIN_PIN` | PIN đăng nhập admin |
+| `AI_AGENT_API_KEY` | Key cho AI API (`x-api-key`) |
+| `NEXT_PUBLIC_SITE_URL` | Optional — canonical/OG (fallback production URL) |
 
-## Learn More
+## SQL setup (Supabase Dashboard → SQL Editor)
 
-To learn more about Next.js, take a look at the following resources:
+Chạy lần lượt:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. `supabase-setup.sql` — bảng `items`, storage, RLS cơ bản  
+2. `supabase-ai-media.sql` — bảng `ai_media` (nếu dùng kho ảnh AI)  
+3. `supabase-migration-display-order.sql` — cột `display_order` + index  
+4. `supabase-migration-security.sql` — RLS: anon chỉ SELECT; write qua service role  
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Admin
 
-## Deploy on Vercel
+- URL: `/admin` → nhập PIN (`ADMIN_PIN`) → `/admin/dashboard`
+- Cookie session ký HMAC, hết hạn 7 ngày
+- Quản lý kho (kéo-thả thứ tự), thêm/sửa món, kho ảnh AI
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## AI API
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Auth: header `x-api-key: <AI_AGENT_API_KEY>` (hoặc `Authorization: Bearer …`).  
+Thiếu key trên server → `503`; sai/thiếu trên request → `401`.
+
+| Method | Endpoint | Mô tả |
+|--------|----------|--------|
+| `GET` | `/api/ai/stats` | Thống kê total / unposted / posted |
+| `GET` | `/api/ai/media` | Danh sách ảnh (`limit`/`offset`, filter status) |
+| `GET` | `/api/ai/next-post` | Ảnh chưa đăng tiếp theo |
+| `POST` | `/api/ai/mark-posted` | Body `{ id, platform? }` — đánh dấu đã đăng |
+
+## Deploy Vercel
+
+1. Import repo → Framework: Next.js  
+2. Set cùng các env như `.env.example` (+ optional `NEXT_PUBLIC_SITE_URL`)  
+3. Deploy — production mặc định: `https://pass-do-review.vercel.app`
+
+## Scripts
+
+| Script | Lệnh |
+|--------|------|
+| Dev | `npm run dev` |
+| Build | `npm run build` |
+| Lint | `npm run lint` |
+| Typecheck | `npm run typecheck` |
+| E2E | `npm run test:e2e` |

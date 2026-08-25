@@ -1,50 +1,123 @@
 'use server'
 
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { revalidatePath } from 'next/cache'
 import { supabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase-admin'
+import {
+  ADMIN_COOKIE_MAX_AGE_SEC,
+  ADMIN_COOKIE_NAME,
+  assertAdmin,
+  signAdminCookie,
+} from '@/lib/auth'
+import {
+  checkLoginRateLimit,
+  clearLoginAttempts,
+  recordFailedLogin,
+} from '@/lib/rate-limit'
+import { parseItemFormData } from '@/lib/item-schema'
+
+function getClientIp(headerStore: Headers): string {
+  const forwarded = headerStore.get('x-forwarded-for')
+  if (forwarded) {
+    const first = forwarded.split(',')[0]?.trim()
+    if (first) return first
+  }
+  return headerStore.get('x-real-ip')?.trim() || 'unknown'
+}
 
 export async function loginWithPin(formData: FormData) {
+  const headerStore = await headers()
+  const ip = getClientIp(headerStore)
+
+  const rate = checkLoginRateLimit(ip)
+  if (!rate.allowed) {
+    return {
+      error: `Quá nhiều lần đăng nhập sai. Thử lại sau ${rate.retryAfterSec} giây.`,
+    }
+  }
+
   const pin = formData.get('pin') as string
-  const adminPin = process.env.ADMIN_PIN || '123456'
+  const adminPin = process.env.ADMIN_PIN
+
+  if (!adminPin) {
+    return { error: 'ADMIN_PIN chưa được cấu hình' }
+  }
 
   if (pin === adminPin) {
+    clearLoginAttempts(ip)
     const cookieStore = await cookies()
-    cookieStore.set('admin_auth', 'authenticated', { 
-      httpOnly: true, 
+    cookieStore.set(ADMIN_COOKIE_NAME, signAdminCookie(adminPin), {
+      httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60 * 24 * 7 // 1 week
+      sameSite: 'lax',
+      maxAge: ADMIN_COOKIE_MAX_AGE_SEC,
     })
     redirect('/admin/dashboard')
-  } else {
-    return { error: 'Mã PIN không chính xác' }
   }
+
+  recordFailedLogin(ip)
+  return { error: 'Mã PIN không chính xác' }
 }
 
 export async function logout() {
   const cookieStore = await cookies()
-  cookieStore.delete('admin_auth')
+  cookieStore.delete(ADMIN_COOKIE_NAME)
   redirect('/admin')
 }
 
-export async function addItem(formData: FormData) {
-  // In a real app, verify cookie here again just in case
-  const name = formData.get('name') as string
-  const original_price = parseFloat(formData.get('original_price') as string)
-  const sell_price = parseFloat(formData.get('sell_price') as string)
-  const status = formData.get('status') as string
-  const affiliate_link = formData.get('affiliate_link') as string
-  const imagesStr = formData.get('images') as string
-  const images = imagesStr ? JSON.parse(imagesStr) : []
+/** Upload one image to storage via service role. Client keeps compress + preview UX. */
+export async function uploadImage(formData: FormData) {
+  await assertAdmin()
 
-  const { error } = await supabase
-    .from('items')
-    .insert([
-      { name, original_price, sell_price, status, affiliate_link, images }
-    ])
+  const file = formData.get('file')
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: 'Không có file ảnh hợp lệ' }
+  }
+
+  const prefixRaw = formData.get('prefix')
+  const prefix =
+    typeof prefixRaw === 'string' && prefixRaw.length > 0 ? prefixRaw : ''
+
+  const fileName = `${prefix}${Date.now()}-${Math.random().toString(36).substring(7)}.webp`
+
+  const { error } = await supabaseAdmin.storage
+    .from('item-images')
+    .upload(fileName, file, {
+      cacheControl: '31536000',
+      upsert: false,
+      contentType: file.type || 'image/webp',
+    })
 
   if (error) {
-    console.error('Error adding item:', error)
+    return { error: error.message }
+  }
+
+  const { data: publicUrlData } = supabaseAdmin.storage
+    .from('item-images')
+    .getPublicUrl(fileName)
+
+  return { url: publicUrlData.publicUrl }
+}
+
+export async function addItem(formData: FormData) {
+  await assertAdmin()
+
+  const parsed = parseItemFormData(formData)
+  if (parsed.error || !parsed.data) {
+    return { error: parsed.error || 'Dữ liệu không hợp lệ' }
+  }
+
+  const { name, original_price, sell_price, status, affiliate_link, images } =
+    parsed.data
+
+  const { error } = await supabaseAdmin.from('items').insert([
+    { name, original_price, sell_price, status, affiliate_link, images },
+  ])
+
+  if (error) {
+    console.error('Error adding item:', error.message)
     return { error: error.message }
   }
 
@@ -54,7 +127,9 @@ export async function addItem(formData: FormData) {
 }
 
 export async function updateItemStatus(id: string, status: string) {
-  const { error } = await supabase
+  await assertAdmin()
+
+  const { error } = await supabaseAdmin
     .from('items')
     .update({ status })
     .eq('id', id)
@@ -62,18 +137,16 @@ export async function updateItemStatus(id: string, status: string) {
   if (error) {
     return { error: error.message }
   }
-  
+
   revalidatePath('/')
   revalidatePath('/admin/dashboard')
   return { success: true }
 }
 
-import { revalidatePath } from 'next/cache'
-
 function extractStorageFileNames(urls: string[]): string[] {
   if (!urls || !Array.isArray(urls)) return []
   return urls
-    .map(url => {
+    .map((url) => {
       try {
         const parts = url.split('/item-images/')
         if (parts.length > 1) {
@@ -88,7 +161,8 @@ function extractStorageFileNames(urls: string[]): string[] {
 }
 
 export async function deleteItem(id: string) {
-  // 1. Fetch images to delete files from storage
+  await assertAdmin()
+
   const { data: item } = await supabase
     .from('items')
     .select('images')
@@ -98,36 +172,33 @@ export async function deleteItem(id: string) {
   if (item?.images && Array.isArray(item.images)) {
     const fileNames = extractStorageFileNames(item.images)
     if (fileNames.length > 0) {
-      await supabase.storage.from('item-images').remove(fileNames)
+      await supabaseAdmin.storage.from('item-images').remove(fileNames)
     }
   }
 
-  // 2. Delete item record
-  const { error } = await supabase
-    .from('items')
-    .delete()
-    .eq('id', id)
+  const { error } = await supabaseAdmin.from('items').delete().eq('id', id)
 
   if (error) {
     return { error: error.message }
   }
-  
+
   revalidatePath('/')
   revalidatePath('/admin/dashboard')
   return { success: true }
 }
 
 export async function editItem(id: string, formData: FormData) {
-  const name = formData.get('name') as string
-  const original_price = parseFloat(formData.get('original_price') as string)
-  const sell_price = parseFloat(formData.get('sell_price') as string)
-  const status = formData.get('status') as string
-  const affiliate_link = formData.get('affiliate_link') as string
-  
-  const imagesStr = formData.get('images') as string
-  const newImages: string[] = imagesStr ? JSON.parse(imagesStr) : []
+  await assertAdmin()
 
-  // 1. Clean up removed old images from storage
+  const parsed = parseItemFormData(formData)
+  if (parsed.error || !parsed.data) {
+    return { error: parsed.error || 'Dữ liệu không hợp lệ' }
+  }
+
+  const { name, original_price, sell_price, status, affiliate_link, images } =
+    parsed.data
+  const newImages = images
+
   const { data: existingItem } = await supabase
     .from('items')
     .select('images')
@@ -136,21 +207,27 @@ export async function editItem(id: string, formData: FormData) {
 
   if (existingItem?.images && Array.isArray(existingItem.images)) {
     const oldImages: string[] = existingItem.images
-    const removedImages = oldImages.filter(img => !newImages.includes(img))
+    const removedImages = oldImages.filter((img) => !newImages.includes(img))
     const removedFileNames = extractStorageFileNames(removedImages)
     if (removedFileNames.length > 0) {
-      await supabase.storage.from('item-images').remove(removedFileNames)
+      await supabaseAdmin.storage.from('item-images').remove(removedFileNames)
     }
   }
 
-  // 2. Update item record
-  const { error } = await supabase
+  const { error } = await supabaseAdmin
     .from('items')
-    .update({ name, original_price, sell_price, status, affiliate_link, images: newImages })
+    .update({
+      name,
+      original_price,
+      sell_price,
+      status,
+      affiliate_link,
+      images: newImages,
+    })
     .eq('id', id)
 
   if (error) {
-    console.error('Error updating item:', error)
+    console.error('Error updating item:', error.message)
     return { error: error.message }
   }
 
@@ -159,42 +236,47 @@ export async function editItem(id: string, formData: FormData) {
   redirect('/admin/dashboard')
 }
 
-export async function updateItemsOrder(items: { id: string; display_order: number }[]) {
-  // We can't bulk update easily with supabase-js unless we use upsert, 
-  // but upsert requires all non-nullable fields if we don't have a specific setup.
-  // So we'll just run individual updates concurrently.
-  const promises = items.map(item => 
-    supabase
+export async function updateItemsOrder(
+  items: { id: string; display_order: number }[]
+) {
+  await assertAdmin()
+
+  const promises = items.map((item) =>
+    supabaseAdmin
       .from('items')
       .update({ display_order: item.display_order })
       .eq('id', item.id)
   )
-  
+
   const results = await Promise.all(promises)
-  
-  const error = results.find(res => res.error)?.error
+
+  const error = results.find((res) => res.error)?.error
   if (error) {
-    console.error('Error updating items order:', error)
+    console.error('Error updating items order:', error.message)
     return { error: error.message }
   }
-  
+
   return { success: true }
 }
 
-export async function bulkAddAiMedia(data: { item_id?: string | null; image_urls: string[]; notes?: string }) {
-  const records = data.image_urls.map(url => ({
+export async function bulkAddAiMedia(data: {
+  item_id?: string | null
+  image_urls: string[]
+  notes?: string
+}) {
+  await assertAdmin()
+
+  const records = data.image_urls.map((url) => ({
     item_id: data.item_id || null,
     image_url: url,
     notes: data.notes || null,
-    is_posted: false
+    is_posted: false,
   }))
 
-  const { error } = await supabase
-    .from('ai_media')
-    .insert(records)
+  const { error } = await supabaseAdmin.from('ai_media').insert(records)
 
   if (error) {
-    console.error('Error adding AI media:', error)
+    console.error('Error adding AI media:', error.message)
     return { error: error.message }
   }
 
@@ -203,11 +285,13 @@ export async function bulkAddAiMedia(data: { item_id?: string | null; image_urls
 }
 
 export async function toggleAiMediaStatus(id: string, is_posted: boolean) {
-  const { error } = await supabase
+  await assertAdmin()
+
+  const { error } = await supabaseAdmin
     .from('ai_media')
-    .update({ 
-      is_posted, 
-      posted_at: is_posted ? new Date().toISOString() : null 
+    .update({
+      is_posted,
+      posted_at: is_posted ? new Date().toISOString() : null,
     })
     .eq('id', id)
 
@@ -220,17 +304,14 @@ export async function toggleAiMediaStatus(id: string, is_posted: boolean) {
 }
 
 export async function deleteAiMedia(id: string, imageUrl: string) {
-  // 1. Clean up storage file
+  await assertAdmin()
+
   const fileNames = extractStorageFileNames([imageUrl])
   if (fileNames.length > 0) {
-    await supabase.storage.from('item-images').remove(fileNames)
+    await supabaseAdmin.storage.from('item-images').remove(fileNames)
   }
 
-  // 2. Delete record
-  const { error } = await supabase
-    .from('ai_media')
-    .delete()
-    .eq('id', id)
+  const { error } = await supabaseAdmin.from('ai_media').delete().eq('id', id)
 
   if (error) {
     return { error: error.message }
@@ -239,4 +320,3 @@ export async function deleteAiMedia(id: string, imageUrl: string) {
   revalidatePath('/admin/dashboard/ai-media')
   return { success: true }
 }
-

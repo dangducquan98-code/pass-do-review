@@ -2,24 +2,14 @@
 
 import { useState } from 'react'
 import { compressImage } from '@/lib/image-compression'
-import { supabase } from '@/lib/supabase'
-import { addItem, editItem } from '@/app/actions'
+import { addItem, editItem, uploadImage } from '@/app/actions'
 import { UploadCloud, Loader2, X } from 'lucide-react'
 import Image from 'next/image'
 
 import { toast } from 'sonner'
+import type { ItemFormData } from '@/lib/types'
 
-type ItemData = {
-  id?: string
-  name: string
-  original_price: number | null
-  sell_price: number
-  status: string
-  images: string[]
-  affiliate_link: string | null
-}
-
-export default function AdminItemForm({ initialData }: { initialData?: ItemData }) {
+export default function AdminItemForm({ initialData }: { initialData?: ItemFormData }) {
   const [loading, setLoading] = useState(false)
   const [existingImages, setExistingImages] = useState<string[]>(initialData?.images || [])
   const [newImageFiles, setNewImageFiles] = useState<File[]>([])
@@ -60,27 +50,19 @@ export default function AdminItemForm({ initialData }: { initialData?: ItemData 
 
       let uploadedUrls: string[] = []
       
-      // Upload new images to Supabase
+      // Compress client-side, upload via server action (service role)
       if (newImageFiles.length > 0) {
         toast.loading('Đang tối ưu và tải ảnh lên kho...', { id: 'upload-toast' })
         const uploadPromises = newImageFiles.map(async (file) => {
           const compressedFile = await compressImage(file)
-          const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.webp`
-          
-          const { error } = await supabase.storage
-            .from('item-images')
-            .upload(fileName, compressedFile, {
-              cacheControl: '3600',
-              upsert: false
-            })
+          const uploadData = new FormData()
+          uploadData.append('file', compressedFile)
 
-          if (error) throw error
-
-          const { data: publicUrlData } = supabase.storage
-            .from('item-images')
-            .getPublicUrl(fileName)
-            
-          return publicUrlData.publicUrl
+          const result = await uploadImage(uploadData)
+          if (result.error || !result.url) {
+            throw new Error(result.error || 'Upload thất bại')
+          }
+          return result.url
         })
 
         uploadedUrls = await Promise.all(uploadPromises)
@@ -107,12 +89,19 @@ export default function AdminItemForm({ initialData }: { initialData?: ItemData 
         throw new Error(actionResult.error)
       }
       
-    } catch (error: any) {
-      if (error?.message === 'NEXT_REDIRECT') {
+    } catch (error: unknown) {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'message' in error &&
+        (error as { message?: string }).message === 'NEXT_REDIRECT'
+      ) {
         throw error
       }
       console.error(error)
-      toast.error(`Lỗi: ${error.message || 'Không xác định'}`)
+      const message =
+        error instanceof Error ? error.message : 'Không xác định'
+      toast.error(`Lỗi: ${message}`)
       setLoading(false)
     }
   }
