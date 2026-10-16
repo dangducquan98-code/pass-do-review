@@ -6,6 +6,9 @@ import ImageGallery from './ImageGallery'
 import Image from 'next/image'
 import type { Item } from '@/lib/types'
 
+// Tạo một lần cho mọi thẻ thay vì mỗi lần render.
+const vndFormatter = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' })
+
 export default function ProductCard({ 
   item, 
   priority = false 
@@ -102,11 +105,11 @@ export default function ProductCard({
                 <p className={`text-sm sm:text-lg md:text-xl font-black tracking-tight ${
                   isAvailable ? 'text-neutral-950' : 'text-neutral-400'
                 }`}>
-                  {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.sell_price)}
+                  {vndFormatter.format(item.sell_price)}
                 </p>
                 {item.original_price && (
                   <p className="text-[10px] sm:text-xs text-neutral-400 line-through mt-0.5">
-                    Gốc: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.original_price)}
+                    Gốc: {vndFormatter.format(item.original_price)}
                   </p>
                 )}
               </div>

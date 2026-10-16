@@ -1,7 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
-import { useSearchParams, usePathname } from 'next/navigation'
+import { useEffect, useRef, useState } from 'react'
 import { PackageSearch, Sparkles, CheckCircle2 } from 'lucide-react'
 import AnimatedProductGrid from './AnimatedProductGrid'
 import SearchBar from './SearchBar'
@@ -9,7 +8,8 @@ import type { Item } from '@/lib/types'
 
 type ProductSectionProps = {
   items: Item[]
-  initialTab?: string
+  /** Tổng số đồ đã bán trong DB; `items` chỉ chứa một phần gần nhất. */
+  soldTotal?: number
 }
 
 const TAB_AVAILABLE = 'products-tab-available'
@@ -17,28 +17,26 @@ const TAB_SOLD = 'products-tab-sold'
 const PANEL_AVAILABLE = 'products-panel-available'
 const PANEL_SOLD = 'products-panel-sold'
 
-export default function ProductSection({ items, initialTab = 'available' }: ProductSectionProps) {
-  const searchParams = useSearchParams()
-  const pathname = usePathname()
+export default function ProductSection({ items, soldTotal }: ProductSectionProps) {
   const availableTabRef = useRef<HTMLButtonElement>(null)
   const soldTabRef = useRef<HTMLButtonElement>(null)
 
-  const urlTabParam = searchParams.get('tab') || initialTab
-  const urlTab: 'available' | 'sold' = urlTabParam === 'sold' ? 'sold' : 'available'
+  const [activeTab, setActiveTab] = useState<'available' | 'sold'>('available')
+  const [searchQuery, setSearchQuery] = useState('')
 
-  const [activeTab, setActiveTab] = useState<'available' | 'sold'>(urlTab)
-  const [prevUrlTab, setPrevUrlTab] = useState(urlTab)
-
-  // Sync tab when URL searchParams change (browser back/forward) — render-time adjust
-  if (urlTab !== prevUrlTab) {
-    setPrevUrlTab(urlTab)
-    setActiveTab(urlTab)
-  }
-
-  const initialSearch = searchParams.get('q') || ''
-  const [searchQuery, setSearchQuery] = useState(initialSearch)
+  // Đọc tab/q từ URL sau khi hydrate. Không dùng useSearchParams vì hook đó
+  // khiến cả lưới sản phẩm phải render ở client thay vì có sẵn trong HTML tĩnh.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const urlTab = params.get('tab') === 'sold' ? 'sold' : 'available'
+    const urlQuery = params.get('q') || ''
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- đồng bộ một lần từ URL sau hydrate
+    if (urlTab !== 'available') setActiveTab(urlTab)
+    if (urlQuery) setSearchQuery(urlQuery)
+  }, [])
 
   const updateUrl = (tabVal: 'available' | 'sold', queryVal: string) => {
+    const pathname = window.location.pathname
     const params = new URLSearchParams()
     if (tabVal !== 'available') {
       params.set('tab', tabVal)
@@ -53,7 +51,6 @@ export default function ProductSection({ items, initialTab = 'available' }: Prod
 
   const handleTabChange = (newTab: 'available' | 'sold') => {
     setActiveTab(newTab)
-    setPrevUrlTab(newTab)
     updateUrl(newTab, searchQuery)
   }
 
@@ -90,7 +87,6 @@ export default function ProductSection({ items, initialTab = 'available' }: Prod
   const handleResetSearch = () => {
     setSearchQuery('')
     setActiveTab('available')
-    setPrevUrlTab('available')
     updateUrl('available', '')
   }
 
@@ -106,7 +102,9 @@ export default function ProductSection({ items, initialTab = 'available' }: Prod
   const displayedItems = activeTab === 'sold' ? soldItems : availableItems
 
   const totalAvailable = items.filter((i) => i.status === 'available').length
-  const totalSold = items.filter((i) => i.status === 'sold').length
+  const loadedSold = items.filter((i) => i.status === 'sold').length
+  const totalSold = Math.max(soldTotal ?? loadedSold, loadedSold)
+  const showSoldLimitNote = activeTab === 'sold' && totalSold > loadedSold
 
   return (
     <section id="products" className="py-8 md:py-16 px-3 sm:px-6 lg:px-8 max-w-7xl mx-auto relative z-10">
@@ -122,7 +120,6 @@ export default function ProductSection({ items, initialTab = 'available' }: Prod
             placeholder="Tìm món đồ theo tên..."
             value={searchQuery}
             onChange={handleSearchChange}
-            onClear={() => handleSearchChange('')}
           />
         </div>
 
@@ -225,6 +222,12 @@ export default function ProductSection({ items, initialTab = 'available' }: Prod
           </div>
         ) : (
           <AnimatedProductGrid items={displayedItems} />
+        )}
+
+        {showSoldLimitNote && (
+          <p className="mt-6 text-center text-xs sm:text-sm text-neutral-500">
+            Đang hiển thị {loadedSold} trong tổng số {totalSold} món đã thanh lý.
+          </p>
         )}
       </div>
     </section>

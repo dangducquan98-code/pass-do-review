@@ -256,6 +256,8 @@ export async function updateItemsOrder(
     return { error: error.message }
   }
 
+  revalidatePath('/')
+
   return { success: true }
 }
 

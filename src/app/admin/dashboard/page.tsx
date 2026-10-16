@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase'
-import SearchBar from '@/components/SearchBar'
+import AdminSearchBar from '@/components/AdminSearchBar'
 import SortableAdminListLazy from '@/components/SortableAdminListLazy'
 import { Package, DollarSign, CheckCircle2, Plus } from 'lucide-react'
 import Link from 'next/link'
@@ -97,7 +97,7 @@ export default async function AdminDashboard({ searchParams }: Props) {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <h2 className="text-lg font-bold text-neutral-900">Danh sách tất cả món đồ ({allItems.length})</h2>
           <div className="w-full sm:w-72">
-            <SearchBar placeholder="Tìm kiếm trong kho..." />
+            <AdminSearchBar placeholder="Tìm kiếm trong kho..." />
           </div>
         </div>
         
